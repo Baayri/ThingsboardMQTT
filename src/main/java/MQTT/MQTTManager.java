@@ -1,11 +1,11 @@
 package MQTT;
 
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.eclipse.paho.client.mqttv3.*;
+import params.Params;
 
-public class MQTTManager implements MQTTService {
+import java.sql.Timestamp;
+
+public class MQTTManager implements MQTTService, MqttCallback {
 
     private final MqttClient mqttClient;
     private final MqttConnectOptions options;
@@ -32,11 +32,22 @@ public class MQTTManager implements MQTTService {
     @Override
     public void publish(String key, String value, String topic, int qos) {
         try {
-            String content = "{'" +  key + "' : '"+ value + "'}";
+            String content = String.format("{'%1$s':'%2$s'}",key,value);
             System.out.println("Publishing message:"+content);
             MqttMessage mqttMessage = new MqttMessage(content.getBytes());
             mqttMessage.setQos(qos);
             this.mqttClient.publish(topic,mqttMessage);
+        }
+        catch (Exception exception){
+            System.out.println(exception.getMessage());
+        }
+    }
+
+    @Override
+    public void subscribe() {
+        this.mqttClient.setCallback(this);
+        try {
+            mqttClient.subscribe(Params.subTopic,0);
         }
         catch (Exception exception){
             System.out.println(exception.getMessage());
@@ -53,5 +64,20 @@ public class MQTTManager implements MQTTService {
         catch (Exception exception){
             System.out.println(exception.getMessage());
         }
+    }
+
+    @Override
+    public void connectionLost(Throwable throwable) {
+
+    }
+
+    @Override
+    public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
+        System.out.println("Message: " + mqttMessage);
+    }
+
+    @Override
+    public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
+
     }
 }
